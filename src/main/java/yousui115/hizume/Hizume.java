@@ -46,7 +46,7 @@ public class Hizume
         //■みんな だいすき こんふぃぐれーしょん
         // ▼DataWatcherのNo
         Configuration config = new Configuration(event.getSuggestedConfigurationFile());
-        nNoDW = MathHelper.clamp_int(config.get(Configuration.CATEGORY_GENERAL, "ExpMag", nNoDW, "Entity DataWatcher No (25 - 31)").getInt(), 25, 31);
+        nNoDW = MathHelper.clamp_int(config.get(Configuration.CATEGORY_GENERAL, "DataWatcherID", nNoDW, "Entity DataWatcher ID (25 - 31)").getInt(), 25, 31);
         config.save();
 
         //■1.アイテムのインスタンス生成
