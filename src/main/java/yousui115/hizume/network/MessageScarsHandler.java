@@ -10,11 +10,11 @@ import net.minecraftforge.fml.common.network.simpleimpl.IMessageHandler;
 import net.minecraftforge.fml.common.network.simpleimpl.MessageContext;
 import yousui115.hizume.item.ItemHizume;
 
-public class MessageScarsOfWindHandler implements IMessageHandler<MessageScarsOfWind, IMessage>
+public class MessageScarsHandler implements IMessageHandler<MessageScars, IMessage>
 {
 
     @Override
-    public IMessage onMessage(MessageScarsOfWind message, MessageContext ctx)
+    public IMessage onMessage(MessageScars message, MessageContext ctx)
     {
         //■サーバのプレイヤー
         EntityPlayer player = ctx.getServerHandler().playerEntity;
@@ -22,13 +22,15 @@ public class MessageScarsOfWindHandler implements IMessageHandler<MessageScarsOf
 
         if (target != null && !target.isDead)
         {
-            DamageSource damage = DamageSource.causePlayerDamage(player);
-            target.attackEntityFrom(damage, (float)MathHelper.clamp_int(message.getDamage(), 1, Integer.MAX_VALUE - 1));
+            DamageSource damagesource = DamageSource.causePlayerDamage(player);
+            target.attackEntityFrom(damagesource, (float)MathHelper.clamp_int(message.getDamage(), message.getDamage(), Integer.MAX_VALUE - 1));
+            //TODO
+            System.out.println("EntityID = " + message.getTargetID() + " : damage = " + message.getDamage());
             ItemStack stack = player.getCurrentEquippedItem();
             if (stack != null && stack.getItem() instanceof ItemHizume)
             {
-                //((ItemHizume)stack.getItem()).removeSlashTargetFromID(stack, target.getEntityId());
-                //((ItemHizume)stack.getItem()).resetSlashTargetFromID(stack, target.getEntityId());
+                //■傷リセット
+                ((ItemHizume)stack.getItem()).setHitCount(target.getDataWatcher(), 0);
             }
         }
 

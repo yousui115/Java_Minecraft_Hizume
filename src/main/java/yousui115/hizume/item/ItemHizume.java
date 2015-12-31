@@ -1,9 +1,7 @@
 package yousui115.hizume.item;
 
-import java.util.ArrayList;
-import java.util.Set;
-
 import net.minecraft.client.resources.model.ModelResourceLocation;
+import net.minecraft.entity.DataWatcher;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.SharedMonsterAttributes;
 import net.minecraft.entity.ai.attributes.AttributeModifier;
@@ -11,13 +9,13 @@ import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.EnumAction;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.ItemSword;
-import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.util.MathHelper;
 import net.minecraft.util.MovingObjectPosition;
 import net.minecraft.world.World;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 import yousui115.hizume.Hizume;
-import yousui115.hizume.network.MessageScarsOfWind;
+import yousui115.hizume.network.MessageScars;
 import yousui115.hizume.network.PacketHandler;
 
 import com.google.common.collect.HashMultimap;
@@ -33,14 +31,14 @@ public class ItemHizume extends ItemSword
         super(material);
     }
 
-//    /**
-//     * If this function returns true (or the item is damageable), the ItemStack's NBT tag will be sent to the client.
-//     */
-//    @Override
-//    public boolean getShareTag()
-//    {
-//        return false;
-//    }
+    /**
+     * If this function returns true (or the item is damageable), the ItemStack's NBT tag will be sent to the client.
+     */
+    @Override
+    public boolean getShareTag()
+    {
+        return false;
+    }
 
     @SideOnly(Side.CLIENT)
     @Override
@@ -56,12 +54,6 @@ public class ItemHizume extends ItemSword
     @Override
     public void onUpdate(ItemStack stackIn, World worldIn, Entity entityIn, int itemSlot, boolean isSelected)
     {
-        if (!isSelected)
-        {
-            //TODO 呼びすぎー！一定期間で適度に呼ばれるメソッドはないものか
-            //■武器を切り替えたタイミングで呼ぶ
-            arngSlashTarget(stackIn, worldIn);
-        }
     }
 
 
@@ -83,22 +75,6 @@ public class ItemHizume extends ItemSword
     public int getMaxItemUseDuration(ItemStack stack)
     {
         return 72000;
-    }
-
-    /**
-     * Called when an ItemStack with NBT data is read to potentially that ItemStack's NBT data
-     */
-    @Override
-    public boolean updateItemStackNBT(NBTTagCompound nbt)
-    {
-        //TODO ItemStack.readFromNBT()から呼ばれる。(引数はItemStack.stackTagCompound)
-        //     もしゲームロード時にのみ呼ばれるなら、nbtのリセットが可能っぽい。
-        //     EntityIDの取り扱いに注意。
-        if (nbt.hasKey(KEY_SLASH_TARGET))
-        {
-            nbt.removeTag(KEY_SLASH_TARGET);
-        }
-        return false;
     }
 
     /**
@@ -146,8 +122,8 @@ public class ItemHizume extends ItemSword
         }
     }
 
-    private final static String KEY_SLASH_TARGET= "hizume.slash_target";
-//    private final static int dwID = 29;
+//    private final static String KEY_SLASH_TARGET= "hizume.slash_target";
+    //private final static int dwID = 29;
     /**
      * Called when the player Left Clicks (attacks) an entity.
      * Processed before damage is done, if return value is true further processing is canceled
@@ -161,40 +137,48 @@ public class ItemHizume extends ItemSword
     @Override
     public boolean onLeftClickEntity(ItemStack stackIn, EntityPlayer player, Entity entity)
     {
-//        //■クライアントサイドのみで処理
-//        if (!player.worldObj.isRemote)
-//        {
-            //■斬った相手のIDを取得
-            int targetID = entity.getEntityId();
+        //■相手に傷をつける(DataWatcherに情報を刻む)
+        DataWatcher dw = entity.getDataWatcher();
 
-            //■傷の数を保持
-            this.addSlashHitFromID(stackIn, targetID);
+        int countHit = getHitCount(dw);
 
-//        }
-
-//        {
-//            //※ 一度刻むと残り続ける情報なのでやめとく！
-//
-//            //■相手に傷をつける(DataWatcherに情報を刻む)
-//            DataWatcher dw = entity.getDataWatcher();
-//
-//            int numHit = 0;
-//            try
-//            {
-//                //■情報が刻まれているなら値を取得できる
-//                numHit = dw.getWatchableObjectInt(dwID);
-//            }
-//            catch(NullPointerException e)
-//            {
-//                //■初物
-//                dw.addObject(dwID, Integer.valueOf(0));
-//            }
-//
-//            //■情報を刻む
-//            dw.updateObject(dwID, ++numHit);
-//        }
+        //■情報を刻む
+        dw.updateObject(Hizume.getNoDW(), ++countHit);
 
         return false;
+    }
+
+    public int getHitCount(DataWatcher dwIn)
+    {
+        int countHit = 0;
+        try
+        {
+            //■情報が刻まれているなら値を取得できる
+            countHit = dwIn.getWatchableObjectInt(Hizume.getNoDW());
+        }
+        catch(NullPointerException e)
+        {
+            //■初物
+            dwIn.addObject(Hizume.getNoDW(), Integer.valueOf(0));
+        }
+
+        return countHit;
+    }
+
+    public void setHitCount(DataWatcher dwIn, int countHit)
+    {
+        //■確認用
+        getHitCount(dwIn);
+
+        //■設定
+        dwIn.updateObject(Hizume.getNoDW(), MathHelper.clamp_int(countHit, 0, Integer.MAX_VALUE - 1));
+    }
+
+    public void addHitCount(DataWatcher dwIn)
+    {
+        int countHit = MathHelper.clamp_int(getHitCount(dwIn), 0, Integer.MAX_VALUE - 1);
+
+        setHitCount(dwIn, countHit);
     }
 
     /**
@@ -256,122 +240,18 @@ public class ItemHizume extends ItemSword
             //■対象Entityを取得
             Entity target = mop.entityHit;
 
-            int nHit = this.getSlashHitFromID(stackIn, target.getEntityId());
+            //int nHit = this.getSlashHitFromID(stackIn, target.getEntityId());
+            int nHit = this.getHitCount(target.getDataWatcher());
 
             if (nHit > 0)
             {
                 //■総ダメージ
                 int damage = 1 * nHit;
                 //■サーバへメッセージ
-                PacketHandler.INSTANCE.sendToServer(new MessageScarsOfWind(target, damage));
+                PacketHandler.INSTANCE.sendToServer(new MessageScars(target, damage));
                 //■傷は開いたのでリセット
-                resetSlashTargetFromID(stackIn, target.getEntityId());
-            }
-        }
-    }
-
-    /**
-     * ■KEY_SLASH_TARGET の NBTTag を取得
-     * @param stackIn
-     * @return
-     */
-    protected NBTTagCompound getSlashTarget(ItemStack stackIn)
-    {
-        NBTTagCompound nbt = stackIn.getTagCompound();
-        if (nbt == null)
-        {
-            stackIn.setTagCompound(new NBTTagCompound());
-            nbt = stackIn.getTagCompound();
-        }
-
-        if (!nbt.hasKey(KEY_SLASH_TARGET))
-        {
-            nbt.setTag(KEY_SLASH_TARGET, new NBTTagCompound());
-        }
-
-        return (NBTTagCompound)nbt.getTag(KEY_SLASH_TARGET);
-    }
-
-    /**
-     * ■
-     * @param stackIn   調査するアイテムスタック
-     * @param entityID  対象EntityのID
-     * @return nHit     爪痕攻撃回数
-     */
-    public int getSlashHitFromID(ItemStack stackIn, int entityID)
-    {
-        int nHit = 0;
-
-        String targetKey = String.valueOf(entityID);
-        NBTTagCompound tagSlash = getSlashTarget(stackIn);
-
-        if (tagSlash.hasKey(targetKey))
-        {
-            nHit = tagSlash.getInteger(targetKey);
-        }
-
-        return nHit;
-    }
-
-    public void addSlashHitFromID(ItemStack stackIn, int entityID)
-    {
-        String targetKey = String.valueOf(entityID);
-        NBTTagCompound tagSlash = getSlashTarget(stackIn);
-
-        if (!tagSlash.hasKey(targetKey))
-        {
-            tagSlash.setInteger(targetKey, 1);
-        }
-        else
-        {
-            int n = tagSlash.getInteger(targetKey);
-            tagSlash.setInteger(targetKey, n >= Integer.MAX_VALUE - 1 ?  Integer.MAX_VALUE - 1 : n + 1);
-        }
-    }
-
-    public void removeSlashTargetFromID(ItemStack stackIn, int entityID)
-    {
-        String targetKey = String.valueOf(entityID);
-        NBTTagCompound tagSlash = getSlashTarget(stackIn);
-
-        tagSlash.removeTag(targetKey);
-    }
-
-    public void resetSlashTargetFromID(ItemStack stackIn, int entityID)
-    {
-        String targetKey = String.valueOf(entityID);
-        NBTTagCompound tagSlash = getSlashTarget(stackIn);
-
-        tagSlash.setInteger(targetKey, 0);
-    }
-
-    /**
-     * ■存在しないEntity,お陀仏Entityをマップから排除
-     *   (コンテナの使い方を勉強しましょう。)
-     */
-    public void arngSlashTarget(ItemStack stackIn, World worldIn)
-    {
-        NBTTagCompound tagSlash = getSlashTarget(stackIn);
-
-        Set<String> setKey = tagSlash.getKeySet();
-        ArrayList<String> eraseKey = new ArrayList<String>();
-
-        if (setKey != null)
-        {
-            for (String s : setKey)
-            {
-                Entity entity = worldIn.getEntityByID(Integer.parseInt(s));
-                if (entity == null || entity.isDead)
-                {
-                    //tagSlash.removeTag(s);
-                    eraseKey.add(s);
-                }
-            }
-
-            for (String s : eraseKey)
-            {
-                tagSlash.removeTag(s);
-                System.out.println((worldIn.isRemote ? "Client" : "Server") + " : remove = " + s);
+                //resetSlashTargetFromID(stackIn, target.getEntityId());
+                this.setHitCount(target.getDataWatcher(), 0);
             }
         }
     }

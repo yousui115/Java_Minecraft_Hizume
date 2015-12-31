@@ -8,7 +8,7 @@ import net.minecraftforge.fml.common.network.simpleimpl.IMessage;
  * Scars of wind : 風の爪痕    で合ってるよね？ね？
  *
  */
-public class MessageScarsOfWind implements IMessage
+public class MessageScars implements IMessage
 {
     private int targetID;
     private int damage;
@@ -16,13 +16,13 @@ public class MessageScarsOfWind implements IMessage
     /**
      * ■コンストラクタ(必須！)
      */
-    public MessageScarsOfWind(){}
+    public MessageScars(){}
 
     /**
      * ■コンストラクタ
      * @param magic
      */
-    public MessageScarsOfWind(Entity targetIn, int damageIn)
+    public MessageScars(Entity targetIn, int damageIn)
     {
         this.targetID = targetIn.getEntityId();
         this.damage   = damageIn;
