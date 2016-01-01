@@ -8,6 +8,7 @@ import net.minecraftforge.common.config.Configuration;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.common.Mod.EventHandler;
 import net.minecraftforge.fml.common.SidedProxy;
+import net.minecraftforge.fml.common.event.FMLInitializationEvent;
 import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
 import net.minecraftforge.fml.common.registry.GameRegistry;
 import yousui115.hizume.item.ItemHizume;
@@ -35,7 +36,7 @@ public class Hizume
     public static String nameHizume = "hizume";
 
     //■コンフィグデータ
-    private static int nNoDW = 29;
+    private static int nDWID = 29;
     /**
      * ■初期化処理(前処理)
      * @param event
@@ -46,7 +47,7 @@ public class Hizume
         //■みんな だいすき こんふぃぐれーしょん
         // ▼DataWatcherのNo
         Configuration config = new Configuration(event.getSuggestedConfigurationFile());
-        nNoDW = MathHelper.clamp_int(config.get(Configuration.CATEGORY_GENERAL, "DataWatcherID", nNoDW, "Entity DataWatcher ID (25 - 31)").getInt(), 25, 31);
+        nDWID = MathHelper.clamp_int(config.get(Configuration.CATEGORY_GENERAL, "DataWatcherID", nDWID, "Entity DataWatcher ID (25 - 31)").getInt(), 25, 31);
         config.save();
 
         //■1.アイテムのインスタンス生成
@@ -64,9 +65,15 @@ public class Hizume
         PacketHandler.init();
     }
 
-    //■相手に与える傷を与える場所(DataWatcher)
-    public static int getNoDW()
+    @EventHandler
+    public void init(FMLInitializationEvent event)
     {
-        return nNoDW;
+        proxy.registerRenderers();
+    }
+
+    //■相手に与える傷を与える場所(DataWatcher)
+    public static int getDWID()
+    {
+        return nDWID;
     }
 }

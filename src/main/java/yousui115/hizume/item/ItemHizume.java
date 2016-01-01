@@ -1,10 +1,15 @@
 package yousui115.hizume.item;
 
+import java.util.List;
+
+import net.minecraft.client.renderer.OpenGlHelper;
 import net.minecraft.client.resources.model.ModelResourceLocation;
 import net.minecraft.entity.DataWatcher;
 import net.minecraft.entity.Entity;
+import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.SharedMonsterAttributes;
 import net.minecraft.entity.ai.attributes.AttributeModifier;
+import net.minecraft.entity.boss.EntityDragonPart;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.EnumAction;
 import net.minecraft.item.ItemStack;
@@ -15,6 +20,9 @@ import net.minecraft.world.World;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 import yousui115.hizume.Hizume;
+import yousui115.hizume.entity.EntitySOW;
+import yousui115.hizume.network.MessageOpenSOW;
+import yousui115.hizume.network.MessageSOW;
 import yousui115.hizume.network.MessageScars;
 import yousui115.hizume.network.PacketHandler;
 
@@ -32,30 +40,43 @@ public class ItemHizume extends ItemSword
     }
 
     /**
-     * If this function returns true (or the item is damageable), the ItemStack's NBT tag will be sent to the client.
+     * ■このアイテムを持っている時に、右クリックが押されると呼ばれる。
+     *   注意：onItemUse()とは違うので注意
      */
     @Override
-    public boolean getShareTag()
+    public ItemStack onItemRightClick(ItemStack stackIn, World worldIn, EntityPlayer playerIn)
     {
-        return false;
+        //■剣を振るってる最中に右クリック
+        if (0 < playerIn.swingProgressInt && playerIn.swingProgressInt < 4)
+        {
+            //■サーバ側での処理
+            if (!worldIn.isRemote)
+            {
+                //■空間へ爪痕をつける
+                EntitySOW[] magic = createSOW(stackIn, worldIn, playerIn);
+                if (magic != null)
+                {
+                    for (EntitySOW base : magic)
+                    {
+                        worldIn.addWeatherEffect(base);
+                        PacketHandler.INSTANCE.sendToAll(new MessageSOW(base));
+                    }
+
+                }
+            }
+        }
+
+        return super.onItemRightClick(stackIn, worldIn, playerIn);
     }
 
     @SideOnly(Side.CLIENT)
     @Override
     public int getColorFromItemStack(ItemStack stack, int renderPass)
     {
+        OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit, 220f, 220f);
+        //OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit, 61680f, 0f);
         return 16777215;
     }
-
-    /**
-     * Called each tick as long the item is on a player inventory. Uses by maps to check if is on a player hand and
-     * update it's contents.
-     */
-    @Override
-    public void onUpdate(ItemStack stackIn, World worldIn, Entity entityIn, int itemSlot, boolean isSelected)
-    {
-    }
-
 
     /**
      * returns the action that specifies what animation to play when the items is being used
@@ -67,26 +88,6 @@ public class ItemHizume extends ItemSword
         return EnumAction.BOW;
     }
 
-    /**
-     * How long it takes to use or consume an item
-     * ■モーション持続時間
-     */
-    @Override
-    public int getMaxItemUseDuration(ItemStack stack)
-    {
-        return 72000;
-    }
-
-    /**
-     * Called whenever this item is equipped and the right mouse button is pressed. Args: itemStack, world, entityPlayer
-     * ■右クリック押した始めの1tickだけ呼ばれる。
-     */
-    @Override
-    public ItemStack onItemRightClick(ItemStack stackIn, World worldIn, EntityPlayer playerIn)
-    {
-        return super.onItemRightClick(stackIn, worldIn, playerIn);
-    }
-
     /* ======================================== FORGE START =====================================*/
 
     /**
@@ -96,7 +97,8 @@ public class ItemHizume extends ItemSword
     public Multimap getAttributeModifiers(ItemStack stack)
     {
         HashMultimap multimap = HashMultimap.create();
-        multimap.put(SharedMonsterAttributes.attackDamage.getAttributeUnlocalizedName(), new AttributeModifier(itemModifierUUID, "Weapon modifier", (double)2, 0));
+        multimap.put(   SharedMonsterAttributes.attackDamage.getAttributeUnlocalizedName(),
+                        new AttributeModifier(itemModifierUUID, "Weapon modifier", (double)2, 0));
         return multimap;
     }
 
@@ -122,12 +124,12 @@ public class ItemHizume extends ItemSword
         }
     }
 
-//    private final static String KEY_SLASH_TARGET= "hizume.slash_target";
-    //private final static int dwID = 29;
     /**
      * Called when the player Left Clicks (attacks) an entity.
      * Processed before damage is done, if return value is true further processing is canceled
      * and the entity is not attacked.
+     * ■左クリックでEntityを殴ると呼ばれる。
+     *   (return : 相手にダメージを [true = 与えない : false = 与える])
      *
      * @param stack The Item being used
      * @param player The player that is attacking
@@ -143,42 +145,9 @@ public class ItemHizume extends ItemSword
         int countHit = getHitCount(dw);
 
         //■情報を刻む
-        dw.updateObject(Hizume.getNoDW(), ++countHit);
+        dw.updateObject(Hizume.getDWID(), ++countHit);
 
         return false;
-    }
-
-    public int getHitCount(DataWatcher dwIn)
-    {
-        int countHit = 0;
-        try
-        {
-            //■情報が刻まれているなら値を取得できる
-            countHit = dwIn.getWatchableObjectInt(Hizume.getNoDW());
-        }
-        catch(NullPointerException e)
-        {
-            //■初物
-            dwIn.addObject(Hizume.getNoDW(), Integer.valueOf(0));
-        }
-
-        return countHit;
-    }
-
-    public void setHitCount(DataWatcher dwIn, int countHit)
-    {
-        //■確認用
-        getHitCount(dwIn);
-
-        //■設定
-        dwIn.updateObject(Hizume.getNoDW(), MathHelper.clamp_int(countHit, 0, Integer.MAX_VALUE - 1));
-    }
-
-    public void addHitCount(DataWatcher dwIn)
-    {
-        int countHit = MathHelper.clamp_int(getHitCount(dwIn), 0, Integer.MAX_VALUE - 1);
-
-        setHitCount(dwIn, countHit);
     }
 
     /**
@@ -225,34 +194,160 @@ public class ItemHizume extends ItemSword
     /* ======================================== イカ、自作   =====================================*/
 
     /**
-     * ■風の爪痕
+     * ■空間へ爪痕をつける
+     * @param stackIn
+     * @param worldIn
+     * @param playerIn
+     * @return
+     */
+    protected EntitySOW[] createSOW(ItemStack stackIn, World worldIn, EntityPlayer playerIn)
+    {
+        //TODO
+        EntitySOW[] sows = { new EntitySOW(worldIn, playerIn) };
+        return sows;
+    }
+
+    /**
+     * ■相手の傷を開く
      * @param stackIn
      * @param playerIn
      */
-    protected void doScars(ItemStack stackIn, EntityPlayer playerIn)
+    protected Entity doScars(ItemStack stackIn, EntityPlayer playerIn)
     {
+        Entity target = null;
+
         //■クライアント側で検出する
-        MovingObjectPosition mop = Hizume.proxy.getEntity(stackIn, playerIn);
+        List<MovingObjectPosition> mops = Hizume.proxy.getEntity(stackIn, playerIn);
 
         //■モップにEntityが引っかかってる
-        if (mop != null && mop.typeOfHit == MovingObjectPosition.MovingObjectType.ENTITY)
+        //if (mop != null && mop.typeOfHit == MovingObjectPosition.MovingObjectType.ENTITY)
+        if (mops != null && !mops.isEmpty())
         {
-            //■対象Entityを取得
-            Entity target = mop.entityHit;
-
-            //int nHit = this.getSlashHitFromID(stackIn, target.getEntityId());
-            int nHit = this.getHitCount(target.getDataWatcher());
-
-            if (nHit > 0)
+            for (MovingObjectPosition mop : mops)
             {
-                //■総ダメージ
-                int damage = 1 * nHit;
-                //■サーバへメッセージ
-                PacketHandler.INSTANCE.sendToServer(new MessageScars(target, damage));
-                //■傷は開いたのでリセット
-                //resetSlashTargetFromID(stackIn, target.getEntityId());
-                this.setHitCount(target.getDataWatcher(), 0);
+                //■対象Entityを取得
+                target = mop.entityHit;
+                if (target == null) { continue; }
+
+
+                //■EntitySOWはこちら
+                if (target instanceof EntitySOW)
+                {
+                    //■接触しているEntityをかき集める
+                    List<Entity> entities = playerIn.worldObj.getEntitiesWithinAABBExcludingEntity(target, target.getEntityBoundingBox());
+                    if (entities == null || entities.isEmpty()) { continue; }
+
+                    for (Entity entity : entities)
+                    {
+                        //■生物系のみ
+                        if (!(entity instanceof EntityLivingBase) &&
+                            !(entity instanceof EntityDragonPart))
+                        { continue; }
+
+                        //■爪痕をつけた本人
+                        if (entity.equals(playerIn)) { continue; }
+
+                        //■1体でも接触していれば傷が開く
+                        // ▼サーバ側
+                        PacketHandler.INSTANCE.sendToServer(new MessageOpenSOW(target));
+
+                        // ▼クライアント側
+                        ((EntitySOW)target).changeScarsState();
+
+                        break;
+                    }
+                }
+                //■EntityLivingBase等はこちら
+                else
+                {
+//                    System.out.println("target is " + target.getName());
+
+                    //■対象Entityの傷を開く
+                    int nHit = this.getHitCount(target.getDataWatcher());
+                    if (nHit > 0)
+                    {
+                        //■総ダメージ
+                        int damage = 1 * nHit;
+                        //■サーバへメッセージ
+                        PacketHandler.INSTANCE.sendToServer(new MessageScars(target, damage));
+                        //■傷は開いたのでリセット
+                        this.setHitCount(target.getDataWatcher(), 0);
+                    }
+
+                    //■Entityに接触しているSOWを開く
+                    List<Object> objs = playerIn.worldObj.weatherEffects;
+                    if (objs == null || objs.isEmpty()) { continue; }
+
+                    for (Object obj : objs)
+                    {
+                        if (obj instanceof EntitySOW)
+                        {
+                            EntitySOW sow = (EntitySOW)obj;
+                            if (sow.getEntityBoundingBox().intersectsWith(target.getEntityBoundingBox()))
+                            {
+                                //■重なってるので炸裂
+                                // ▼サーバ側
+                                PacketHandler.INSTANCE.sendToServer(new MessageOpenSOW(sow));
+
+                                // ▼クライアント側
+                                sow.changeScarsState();
+                            }
+                        }
+                    }
+
+                }
+
             }
         }
+
+        return target;
     }
+
+    /**
+     * ■対象EntityのDataWatcherについてる傷を取得
+     * @param dwIn
+     * @return
+     */
+    public int getHitCount(DataWatcher dwIn)
+    {
+        int countHit = 0;
+        try
+        {
+            //■情報が刻まれているなら値を取得できる
+            countHit = dwIn.getWatchableObjectInt(Hizume.getDWID());
+        }
+        catch(NullPointerException e)
+        {
+            //■初物
+            dwIn.addObject(Hizume.getDWID(), Integer.valueOf(0));
+        }
+
+        return countHit;
+    }
+
+    /**
+     * ■対象Entityに傷を指定数つける
+     * @param dwIn
+     * @param countHit
+     */
+    public void setHitCount(DataWatcher dwIn, int countHit)
+    {
+        //■確認用
+        getHitCount(dwIn);
+
+        //■設定
+        dwIn.updateObject(Hizume.getDWID(), MathHelper.clamp_int(countHit, 0, Integer.MAX_VALUE - 1));
+    }
+
+    /**
+     * ■対象Entityに傷を一つつける
+     * @param dwIn
+     */
+    public void addHitCount(DataWatcher dwIn)
+    {
+        int countHit = MathHelper.clamp_int(getHitCount(dwIn), 0, Integer.MAX_VALUE - 1);
+
+        setHitCount(dwIn, countHit);
+    }
+
 }

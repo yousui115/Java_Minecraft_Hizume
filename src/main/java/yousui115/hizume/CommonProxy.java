@@ -1,5 +1,7 @@
 package yousui115.hizume;
 
+import java.util.List;
+
 import net.minecraft.client.renderer.entity.RenderItem;
 import net.minecraft.client.renderer.entity.RenderManager;
 import net.minecraft.client.resources.model.ModelResourceLocation;
@@ -33,7 +35,7 @@ public class CommonProxy
     /**
      * ■視線の先のEntityを捕捉する
      */
-    public MovingObjectPosition getEntity(ItemStack itemStackIn, EntityPlayer playerIn){ return null; }
+    public List<MovingObjectPosition> getEntity(ItemStack itemStackIn, EntityPlayer playerIn){ return null; }
 
     public EntityPlayer getEntityPlayerInstance() { return null; }
     public RenderItem getRenderItem() { return null; }

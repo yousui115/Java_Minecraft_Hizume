@@ -13,6 +13,9 @@ import yousui115.hizume.item.ItemHizume;
 public class MessageScarsHandler implements IMessageHandler<MessageScars, IMessage>
 {
 
+    /**
+     * ■Client -> Server
+     */
     @Override
     public IMessage onMessage(MessageScars message, MessageContext ctx)
     {
@@ -25,7 +28,7 @@ public class MessageScarsHandler implements IMessageHandler<MessageScars, IMessa
             DamageSource damagesource = DamageSource.causePlayerDamage(player);
             target.attackEntityFrom(damagesource, (float)MathHelper.clamp_int(message.getDamage(), message.getDamage(), Integer.MAX_VALUE - 1));
             //TODO
-            System.out.println("EntityID = " + message.getTargetID() + " : damage = " + message.getDamage());
+            //System.out.println("EntityID = " + message.getTargetID() + " : damage = " + message.getDamage());
             ItemStack stack = player.getCurrentEquippedItem();
             if (stack != null && stack.getItem() instanceof ItemHizume)
             {
