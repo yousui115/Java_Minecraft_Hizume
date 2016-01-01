@@ -5,6 +5,7 @@ import java.util.List;
 
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLivingBase;
+import net.minecraft.entity.boss.EntityDragon;
 import net.minecraft.entity.boss.EntityDragonPart;
 import net.minecraft.entity.effect.EntityWeatherEffect;
 import net.minecraft.entity.player.EntityPlayer;
@@ -151,14 +152,27 @@ public class EntitySOW extends EntityWeatherEffect
                 //■集めたEntityはどんなものかなー？
                 for (Entity target : entities)
                 {
+                    //■ドラゴン(概念)はスルー
+                    if (target instanceof EntityDragon) { continue; }
+
                     //■生物系のみ
                     if (!(target instanceof EntityLivingBase) &&
                         !(target instanceof EntityDragonPart))
                     { continue; }
 
                     //■ダメージ
-                    target.hurtResistantTime = 0;
-                    target.attackEntityFrom(DamageSource.magic, 10);
+                    if (target instanceof EntityDragonPart)
+                    {
+                        ((Entity)((EntityDragonPart)target).entityDragonObj).hurtResistantTime = 0;
+                    }
+                    else
+                    {
+                        target.hurtResistantTime = 0;
+                    }
+
+                    target.attackEntityFrom(DamageSource.causePlayerDamage(trigger), 10);
+
+                    System.out.println("Entity = " + target.getName() + " : SOWDamage = ?");
                 }
             }
         }

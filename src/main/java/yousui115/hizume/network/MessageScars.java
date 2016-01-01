@@ -11,7 +11,7 @@ import net.minecraftforge.fml.common.network.simpleimpl.IMessage;
 public class MessageScars implements IMessage
 {
     private int targetID;
-    private int damage;
+    private float damage;
 
     /**
      * ■コンストラクタ(必須！)
@@ -22,7 +22,7 @@ public class MessageScars implements IMessage
      * ■コンストラクタ
      * @param magic
      */
-    public MessageScars(Entity targetIn, int damageIn)
+    public MessageScars(Entity targetIn, float damageIn)
     {
         this.targetID = targetIn.getEntityId();
         this.damage   = damageIn;
@@ -32,16 +32,16 @@ public class MessageScars implements IMessage
     public void fromBytes(ByteBuf buf)
     {
         this.targetID = buf.readInt();
-        this.damage   = buf.readInt();
+        this.damage   = buf.readFloat();
     }
 
     @Override
     public void toBytes(ByteBuf buf)
     {
         buf.writeInt(this.targetID);
-        buf.writeInt(this.damage);
+        buf.writeFloat(this.damage);
     }
 
     public int getTargetID() { return this.targetID; }
-    public int getDamage()   { return this.damage; }
+    public float getDamage()   { return this.damage; }
 }

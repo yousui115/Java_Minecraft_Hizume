@@ -16,6 +16,7 @@ public class CommonProxy
     public void registerClientInfo(){}
 
     public boolean isPressScars(){ return false; }
+    public boolean isPressSOW(){ return false; }
 
     /**
      * ■モデルの登録
@@ -40,4 +41,5 @@ public class CommonProxy
     public EntityPlayer getEntityPlayerInstance() { return null; }
     public RenderItem getRenderItem() { return null; }
     public RenderManager getRenderManager() { return null; }
+
 }

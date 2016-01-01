@@ -11,6 +11,7 @@ import net.minecraft.client.resources.model.ModelResourceLocation;
 import net.minecraft.client.settings.KeyBinding;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLivingBase;
+import net.minecraft.entity.boss.EntityDragon;
 import net.minecraft.entity.boss.EntityDragonPart;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
@@ -63,6 +64,12 @@ public class ClientProxy extends CommonProxy
     public boolean isPressScars()
     {
         return keyScars.isPressed();
+    }
+
+    @Override
+    public boolean isPressSOW()
+    {
+        return keySOW.isPressed();
     }
 
     /**
@@ -181,6 +188,9 @@ public class ClientProxy extends CommonProxy
                 //■「判定なし」かつ「SOWでは無い」を満たすEntityはスルー
                 //if (!candidate.canBeCollidedWith() && !(candidate instanceof EntitySOW)) { continue; }
 
+                //■ドラゴン(概念)は対象外
+                if (candidate instanceof EntityDragon) { continue; }
+
                 //■「not 生物」かつ「not ドラゴンパーツ」かつ「not SOW」を満たすEntityはスルー
                 if (!(candidate instanceof EntityLivingBase) &&
                     !(candidate instanceof EntityDragonPart) &&
@@ -281,26 +291,6 @@ public class ClientProxy extends CommonProxy
         }
 
         return targets;
-    }
-
-    /**
-     * ■SOWのMOPをLISTに詰め込む
-     * @param listIn
-     * @param targetIn
-     * @param distance
-     */
-    private boolean addMOP_SOW(List<MovingObjectPosition> listIn, Entity targetIn, Vec3 distance)
-    {
-        if (targetIn instanceof EntitySOW)
-        {
-            MovingObjectPosition mop = new MovingObjectPosition(targetIn, distance);
-            //■後ろから入れる
-            listIn.add(mop);
-
-            return true;
-        }
-
-        return false;
     }
 
     @Override

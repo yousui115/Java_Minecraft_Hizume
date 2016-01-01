@@ -7,8 +7,7 @@ import net.minecraft.client.resources.model.ModelResourceLocation;
 import net.minecraft.entity.DataWatcher;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLivingBase;
-import net.minecraft.entity.SharedMonsterAttributes;
-import net.minecraft.entity.ai.attributes.AttributeModifier;
+import net.minecraft.entity.boss.EntityDragon;
 import net.minecraft.entity.boss.EntityDragonPart;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.EnumAction;
@@ -26,48 +25,87 @@ import yousui115.hizume.network.MessageSOW;
 import yousui115.hizume.network.MessageScars;
 import yousui115.hizume.network.PacketHandler;
 
-import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 
 public class ItemHizume extends ItemSword
 {
+    protected float attackDamage2;
+
     /**
      * ■コンストラクタ
      */
     public ItemHizume(ToolMaterial material)
     {
         super(material);
+        this.attackDamage2 = 4.0F + material.getDamageVsEntity();
+
+    }
+
+    /**
+     * Called each tick as long the item is on a player inventory. Uses by maps to check if is on a player hand and
+     * update it's contents.
+     */
+    public void onUpdate(ItemStack stack, World worldIn, Entity entityIn, int itemSlot, boolean isSelected)
+    {
+        //■カレントアイテムでないなら処理をかえす
+        if (!isSelected) { return; }
+        if (!(entityIn instanceof EntityPlayer)) { return; }
+        EntityPlayer player = (EntityPlayer)entityIn;
+
+        boolean isPress = Hizume.proxy.isPressSOW();
+
+        //■アイテム使ってるなら空間に傷はつけられない
+        if (player.getItemInUseCount() != 0) { return; }
+
+        //■クライアント側での処理
+        if (worldIn.isRemote && isPress)
+        {
+            //■腕を振る
+            player.swingItem();
+
+            //■空間へ爪痕をつける
+            EntitySOW[] magic = createSOW(stack, worldIn, player);
+            if (magic != null)
+            {
+                for (EntitySOW base : magic)
+                {
+                    worldIn.addWeatherEffect(base);
+                    //PacketHandler.INSTANCE.sendToAll(new MessageSOW(base));
+                    PacketHandler.INSTANCE.sendToServer(new MessageSOW(base));
+                }
+            }
+        }
     }
 
     /**
      * ■このアイテムを持っている時に、右クリックが押されると呼ばれる。
      *   注意：onItemUse()とは違うので注意
      */
-    @Override
-    public ItemStack onItemRightClick(ItemStack stackIn, World worldIn, EntityPlayer playerIn)
-    {
-        //■剣を振るってる最中に右クリック
-        if (0 < playerIn.swingProgressInt && playerIn.swingProgressInt < 4)
-        {
-            //■サーバ側での処理
-            if (!worldIn.isRemote)
-            {
-                //■空間へ爪痕をつける
-                EntitySOW[] magic = createSOW(stackIn, worldIn, playerIn);
-                if (magic != null)
-                {
-                    for (EntitySOW base : magic)
-                    {
-                        worldIn.addWeatherEffect(base);
-                        PacketHandler.INSTANCE.sendToAll(new MessageSOW(base));
-                    }
-
-                }
-            }
-        }
-
-        return super.onItemRightClick(stackIn, worldIn, playerIn);
-    }
+//    @Override
+//    public ItemStack onItemRightClick(ItemStack stackIn, World worldIn, EntityPlayer playerIn)
+//    {
+//        //■剣を振るってる最中に右クリック
+////        if (0 < playerIn.swingProgressInt && playerIn.swingProgressInt < 4)
+////        {
+////            //■サーバ側での処理
+////            if (!worldIn.isRemote)
+////            {
+////                //■空間へ爪痕をつける
+////                EntitySOW[] magic = createSOW(stackIn, worldIn, playerIn);
+////                if (magic != null)
+////                {
+////                    for (EntitySOW base : magic)
+////                    {
+////                        worldIn.addWeatherEffect(base);
+////                        PacketHandler.INSTANCE.sendToAll(new MessageSOW(base));
+////                    }
+////
+////                }
+////            }
+////        }
+//
+//        return super.onItemRightClick(stackIn, worldIn, playerIn);
+//    }
 
     @SideOnly(Side.CLIENT)
     @Override
@@ -96,10 +134,11 @@ public class ItemHizume extends ItemSword
     @Override
     public Multimap getAttributeModifiers(ItemStack stack)
     {
-        HashMultimap multimap = HashMultimap.create();
-        multimap.put(   SharedMonsterAttributes.attackDamage.getAttributeUnlocalizedName(),
-                        new AttributeModifier(itemModifierUUID, "Weapon modifier", (double)2, 0));
-        return multimap;
+//        HashMultimap multimap = HashMultimap.create();
+//        multimap.put(   SharedMonsterAttributes.attackDamage.getAttributeUnlocalizedName(),
+//                        new AttributeModifier(itemModifierUUID, "Weapon modifier", (double)this., 0));
+//        return multimap;
+        return super.getAttributeModifiers(stack);
     }
 
     /**
@@ -140,12 +179,23 @@ public class ItemHizume extends ItemSword
     public boolean onLeftClickEntity(ItemStack stackIn, EntityPlayer player, Entity entity)
     {
         //■相手に傷をつける(DataWatcherに情報を刻む)
+        if (entity instanceof EntityDragonPart)
+        {
+            //■DragonPartからDragonを取得
+            entity = (Entity)((EntityDragonPart)entity).entityDragonObj;
+        }
         DataWatcher dw = entity.getDataWatcher();
 
         int countHit = getHitCount(dw);
 
         //■情報を刻む
         dw.updateObject(Hizume.getDWID(), ++countHit);
+
+        //TODO
+        if (!player.worldObj.isRemote)
+        {
+            System.out.println("Entity = " + entity.getName() + " : Scars!");
+        }
 
         return false;
     }
@@ -239,6 +289,9 @@ public class ItemHizume extends ItemSword
 
                     for (Entity entity : entities)
                     {
+                        //■ドラゴン(概念)はスルー
+                        if (entity instanceof EntityDragon) { continue; }
+
                         //■生物系のみ
                         if (!(entity instanceof EntityLivingBase) &&
                             !(entity instanceof EntityDragonPart))
@@ -260,18 +313,28 @@ public class ItemHizume extends ItemSword
                 //■EntityLivingBase等はこちら
                 else
                 {
-//                    System.out.println("target is " + target.getName());
+                    DataWatcher dw;
+                    if (target instanceof EntityDragonPart)
+                    {
+                        //target = ((Entity)((EntityDragonPart)target).entityDragonObj);
+                        //■EnderDragonの傷は本体に蓄積してるので、そっちから取得
+                        dw = ((Entity)((EntityDragonPart)target).entityDragonObj).getDataWatcher();
+                    }
+                    else
+                    {
+                        dw = target.getDataWatcher();
+                    }
 
                     //■対象Entityの傷を開く
-                    int nHit = this.getHitCount(target.getDataWatcher());
+                    int nHit = this.getHitCount(dw);
                     if (nHit > 0)
                     {
                         //■総ダメージ
-                        int damage = 1 * nHit;
+                        float damage = attackDamage2 * (float)nHit;
                         //■サーバへメッセージ
                         PacketHandler.INSTANCE.sendToServer(new MessageScars(target, damage));
                         //■傷は開いたのでリセット
-                        this.setHitCount(target.getDataWatcher(), 0);
+                        this.setHitCount(dw, 0);
                     }
 
                     //■Entityに接触しているSOWを開く

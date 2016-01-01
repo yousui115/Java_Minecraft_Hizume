@@ -4,16 +4,20 @@ import net.minecraft.entity.player.EntityPlayer;
 import net.minecraftforge.fml.common.network.simpleimpl.IMessage;
 import net.minecraftforge.fml.common.network.simpleimpl.IMessageHandler;
 import net.minecraftforge.fml.common.network.simpleimpl.MessageContext;
-import yousui115.hizume.Hizume;
 import yousui115.hizume.entity.EntitySOW;
 
 public class MessageSOWHandler implements IMessageHandler<MessageSOW, IMessage>
 {
 
+    /**
+     * ■
+     */
     @Override
     public IMessage onMessage(MessageSOW message, MessageContext ctx)
     {
-        EntityPlayer player = Hizume.proxy.getEntityPlayerInstance();
+        //TODO
+        //EntityPlayer player = Hizume.proxy.getEntityPlayerInstance();
+        EntityPlayer player = ctx.getServerHandler().playerEntity;
         if (player == null) { return null; }
 
         EntitySOW sow = new EntitySOW(player.worldObj, player);
