@@ -19,7 +19,7 @@ public class Hizume
 {
     public static final String MOD_ID = "hizume";
     public static final String MOD_DOMAIN = "yousui115." + Hizume.MOD_ID;
-    public static final String VERSION = "1.0";
+    public static final String VERSION = "v1";
 
     //■このクラスのインスタンス
     @Mod.Instance(Hizume.MOD_ID)
@@ -47,7 +47,10 @@ public class Hizume
         //■みんな だいすき こんふぃぐれーしょん
         // ▼DataWatcherのNo
         Configuration config = new Configuration(event.getSuggestedConfigurationFile());
-        nDWID = MathHelper.clamp_int(config.get(Configuration.CATEGORY_GENERAL, "DataWatcherID", nDWID, "Entity DataWatcher ID (25 - 31)").getInt(), 25, 31);
+        nDWID = MathHelper.clamp_int(config.get(Configuration.CATEGORY_GENERAL,
+                                                "DataWatcherID",
+                                                nDWID,
+                                                "Entity DataWatcher ID (limits 25 - 31) (default 29)").getInt(), 25, 31);
         config.save();
 
         //■1.アイテムのインスタンス生成
@@ -68,6 +71,7 @@ public class Hizume
     @EventHandler
     public void init(FMLInitializationEvent event)
     {
+        //■Entity,Renderの関連付け
         proxy.registerRenderers();
     }
 

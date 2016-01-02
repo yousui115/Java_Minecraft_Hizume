@@ -172,7 +172,7 @@ public class EntitySOW extends EntityWeatherEffect
 
                     target.attackEntityFrom(DamageSource.causePlayerDamage(trigger), 10);
 
-                    System.out.println("Entity = " + target.getName() + " : SOWDamage = ?");
+                    //System.out.println("Entity = " + target.getName() + " : SOWDamage = ?");
                 }
             }
         }

@@ -30,7 +30,7 @@ public class MessageScarsHandler implements IMessageHandler<MessageScars, IMessa
             DamageSource damagesource = DamageSource.causePlayerDamage(player);
             target.attackEntityFrom(damagesource, MathHelper.clamp_float(message.getDamage(), 0f, Float.MAX_VALUE - 1));
             //TODO
-            System.out.println("Entity = " + target.getName() + " : ScarsDamage = " + message.getDamage());
+            //System.out.println("Entity = " + target.getName() + " : ScarsDamage = " + message.getDamage());
             ItemStack stack = player.getCurrentEquippedItem();
             if (stack != null && stack.getItem() instanceof ItemHizume)
             {

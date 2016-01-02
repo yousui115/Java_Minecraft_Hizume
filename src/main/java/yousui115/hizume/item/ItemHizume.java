@@ -47,12 +47,18 @@ public class ItemHizume extends ItemSword
      */
     public void onUpdate(ItemStack stack, World worldIn, Entity entityIn, int itemSlot, boolean isSelected)
     {
+        //■爪痕設置キーを押しただの押してないだの
+        boolean isPress = false;
+        //■押した回数を覚えてるので発散させる
+        while (Hizume.proxy.getKeySOW().isPressed()) { isPress = true; }
+        //■爪痕設置キーを押しながら緋爪を取ると爪痕が出来るけど、1個だし大丈夫大丈夫
+        isPress = isPress && Hizume.proxy.getKeySOW().isKeyDown();
+
         //■カレントアイテムでないなら処理をかえす
         if (!isSelected) { return; }
         if (!(entityIn instanceof EntityPlayer)) { return; }
         EntityPlayer player = (EntityPlayer)entityIn;
 
-        boolean isPress = Hizume.proxy.isPressSOW();
 
         //■アイテム使ってるなら空間に傷はつけられない
         if (player.getItemInUseCount() != 0) { return; }
@@ -76,36 +82,6 @@ public class ItemHizume extends ItemSword
             }
         }
     }
-
-    /**
-     * ■このアイテムを持っている時に、右クリックが押されると呼ばれる。
-     *   注意：onItemUse()とは違うので注意
-     */
-//    @Override
-//    public ItemStack onItemRightClick(ItemStack stackIn, World worldIn, EntityPlayer playerIn)
-//    {
-//        //■剣を振るってる最中に右クリック
-////        if (0 < playerIn.swingProgressInt && playerIn.swingProgressInt < 4)
-////        {
-////            //■サーバ側での処理
-////            if (!worldIn.isRemote)
-////            {
-////                //■空間へ爪痕をつける
-////                EntitySOW[] magic = createSOW(stackIn, worldIn, playerIn);
-////                if (magic != null)
-////                {
-////                    for (EntitySOW base : magic)
-////                    {
-////                        worldIn.addWeatherEffect(base);
-////                        PacketHandler.INSTANCE.sendToAll(new MessageSOW(base));
-////                    }
-////
-////                }
-////            }
-////        }
-//
-//        return super.onItemRightClick(stackIn, worldIn, playerIn);
-//    }
 
     @SideOnly(Side.CLIENT)
     @Override
@@ -143,7 +119,7 @@ public class ItemHizume extends ItemSword
 
     /**
      * Called each tick while using an item.
-     * ■EnumAction中は毎Tick呼ばれる
+     * ■EnumAction中は毎Tick呼ばれるはず
      * @param stack The Item being used
      * @param player The Player using the item
      * @param count The amount of time in tick the item has been used for continuously
@@ -151,15 +127,16 @@ public class ItemHizume extends ItemSword
     @Override
     public void onUsingTick(ItemStack stackIn, EntityPlayer playerIn, int count)
     {
+        boolean isPress = false;
+        while(Hizume.proxy.getKeyScars().isPressed()) { isPress = true; }
+
         if (count > this.getMaxItemUseDuration(stackIn) - 20) { return; }
 
-        //■プレイヤーの視線上にEntityがいるか否か
-        if (playerIn.worldObj.isRemote)
+        //■
+        if (playerIn.worldObj.isRemote && isPress)
         {
-            if (Hizume.proxy.isPressScars())
-            {
-                this.doScars(stackIn, playerIn);
-            }
+            //■Entityの傷を開く試み
+            this.doScars(stackIn, playerIn);
         }
     }
 
@@ -194,7 +171,7 @@ public class ItemHizume extends ItemSword
         //TODO
         if (!player.worldObj.isRemote)
         {
-            System.out.println("Entity = " + entity.getName() + " : Scars!");
+            //System.out.println("Entity = " + entity.getName() + " : Scars!");
         }
 
         return false;
@@ -258,13 +235,15 @@ public class ItemHizume extends ItemSword
     }
 
     /**
-     * ■相手の傷を開く
+     * ■相手の傷を開く(クライアント側のみ)
      * @param stackIn
      * @param playerIn
      */
     protected Entity doScars(ItemStack stackIn, EntityPlayer playerIn)
     {
         Entity target = null;
+
+        boolean isSoundSE = false;
 
         //■クライアント側で検出する
         List<MovingObjectPosition> mops = Hizume.proxy.getEntity(stackIn, playerIn);
@@ -302,10 +281,13 @@ public class ItemHizume extends ItemSword
 
                         //■1体でも接触していれば傷が開く
                         // ▼サーバ側
-                        PacketHandler.INSTANCE.sendToServer(new MessageOpenSOW(target));
+                        PacketHandler.INSTANCE.sendToServer(new MessageOpenSOW(target, false));
 
                         // ▼クライアント側
                         ((EntitySOW)target).changeScarsState();
+
+                        //■効果音ならすよー
+                        isSoundSE = true;
 
                         break;
                     }
@@ -335,6 +317,9 @@ public class ItemHizume extends ItemSword
                         PacketHandler.INSTANCE.sendToServer(new MessageScars(target, damage));
                         //■傷は開いたのでリセット
                         this.setHitCount(dw, 0);
+
+                        //■効果音ならすよー
+                        isSoundSE = true;
                     }
 
                     //■Entityに接触しているSOWを開く
@@ -350,17 +335,24 @@ public class ItemHizume extends ItemSword
                             {
                                 //■重なってるので炸裂
                                 // ▼サーバ側
-                                PacketHandler.INSTANCE.sendToServer(new MessageOpenSOW(sow));
+                                PacketHandler.INSTANCE.sendToServer(new MessageOpenSOW(sow, false));
 
                                 // ▼クライアント側
                                 sow.changeScarsState();
+
+                                //■効果音ならすよー
+                                isSoundSE = true;
                             }
                         }
                     }
-
                 }
-
             }
+        }
+
+        if (isSoundSE)
+        {
+            //playerIn.worldObj.playSoundAtEntity(playerIn, Hizume.MOD_ID + ":shan", 1.0f, 3.0f);
+            PacketHandler.INSTANCE.sendToServer(new MessageOpenSOW(playerIn, true));
         }
 
         return target;

@@ -51,7 +51,7 @@ public class ClientProxy extends CommonProxy
      * ■バインドするキーの登録
      */
     @Override
-    public void registerClientInfo()
+    public void registerKeyBind()
     {
         ClientRegistry.registerKeyBinding(keyScars);
         ClientRegistry.registerKeyBinding(keySOW);
@@ -60,17 +60,11 @@ public class ClientProxy extends CommonProxy
     /**
      * ■キー入力の有無
      */
+    //public boolean is
     @Override
-    public boolean isPressScars()
-    {
-        return keyScars.isPressed();
-    }
-
+    public KeyBinding getKeyScars() { return keyScars; }
     @Override
-    public boolean isPressSOW()
-    {
-        return keySOW.isPressed();
-    }
+    public KeyBinding getKeySOW() { return keySOW; }
 
     /**
      * ■モデルの登録
@@ -198,7 +192,7 @@ public class ClientProxy extends CommonProxy
                 { continue; }
 
                 //■ターゲットの当たり判定を拡張
-                float fExpand = candidate.getCollisionBorderSize();
+                float fExpand = candidate.getCollisionBorderSize() * 3f;
                 AxisAlignedBB aabb2 = candidate.getEntityBoundingBox().expand(fExpand, fExpand, fExpand);
 
                 //■拡張したターゲットの当たり判定と視線(レンジ)が交差するなら、モップが帰る
