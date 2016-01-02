@@ -52,3 +52,6 @@ https://www.dropbox.com/s/khdfd7pyfnljk4t/Hizume_v1_M18_F1563.jar?dl=0<br>
 ・全体的に地味。<br>
 ・当たり判定が適当。<br>
 ・緋爪に持ち替えた時、独自パーティクルで桜の花びらを散らしたかった。<br>
+<br>
+▼ソースコードの取り扱いやら<br>
+揚げるなり炒めるなり好きにして。<br>
