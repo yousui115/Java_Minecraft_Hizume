@@ -2,6 +2,7 @@ package yousui115.hizume.network;
 
 import java.util.List;
 
+import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraftforge.fml.common.network.simpleimpl.IMessage;
 import net.minecraftforge.fml.common.network.simpleimpl.IMessageHandler;
@@ -28,16 +29,16 @@ public class MessageOpenSOWHandler implements IMessageHandler<MessageOpenSOW, IM
         else
         {
             //Entity target = player.worldObj.getEntityByID(message.getTargetID());
-            List<Object> objs = player.worldObj.weatherEffects;
-            if (objs != null && !objs.isEmpty())
+            List<Entity> entities = player.worldObj.weatherEffects;
+            if (entities != null && !entities.isEmpty())
             {
-                for (Object obj : objs)
+                for (Entity entity : entities)
                 {
                     //■SOW かつ ID一致
-                    if (obj instanceof EntitySOW &&
-                        ((EntitySOW)obj).getEntityId() == message.getTargetID())
+                    if (entity instanceof EntitySOW &&
+                        entity.getEntityId() == message.getTargetID())
                     {
-                        ((EntitySOW)obj).changeScarsState();
+                        ((EntitySOW)entity).changeScarsState();
                         break;
                     }
                 }

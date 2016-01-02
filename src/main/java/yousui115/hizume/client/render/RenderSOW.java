@@ -6,6 +6,7 @@ import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.client.renderer.WorldRenderer;
 import net.minecraft.client.renderer.entity.Render;
 import net.minecraft.client.renderer.entity.RenderManager;
+import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 import net.minecraft.entity.Entity;
 import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.fml.relauncher.Side;
@@ -159,10 +160,11 @@ public class RenderSOW extends Render
 
         //■■■■ 本処理 ■■■■
         //■描画モード
-        worldrenderer.startDrawingQuads();
+        //worldrenderer.startDrawingQuads();
+        worldrenderer.begin(7, DefaultVertexFormats.POSITION_TEX_NORMAL);
 
         //■？
-        worldrenderer.setNormal(0.0F, 1.0F, 0.0F);
+        //worldrenderer.setNormal(0.0F, 1.0F, 0.0F);
 
         //◆頂点登録 開始
         for (int scale = 0; scale < 4; scale++)
@@ -170,10 +172,14 @@ public class RenderSOW extends Render
             double dScale = 1 + scale * 0.3;
             for(int idx = 0; idx < nVecPos.length; idx++)
             {
-                worldrenderer.addVertexWithUV(dVec[nVecPos[idx][0]][0] * dScale, dVec[nVecPos[idx][0]][1] * dScale, dVec[nVecPos[idx][0]][2] * dScale, 0, 0);
-                worldrenderer.addVertexWithUV(dVec[nVecPos[idx][1]][0] * dScale, dVec[nVecPos[idx][1]][1] * dScale, dVec[nVecPos[idx][1]][2] * dScale, 0, 1);
-                worldrenderer.addVertexWithUV(dVec[nVecPos[idx][2]][0] * dScale, dVec[nVecPos[idx][2]][1] * dScale, dVec[nVecPos[idx][2]][2] * dScale, 1, 1);
-                worldrenderer.addVertexWithUV(dVec[nVecPos[idx][3]][0] * dScale, dVec[nVecPos[idx][3]][1] * dScale, dVec[nVecPos[idx][3]][2] * dScale, 1, 0);
+                worldrenderer.pos(dVec[nVecPos[idx][0]][0] * dScale, dVec[nVecPos[idx][0]][1] * dScale, dVec[nVecPos[idx][0]][2] * dScale).tex(0d, 0d).normal(0f, 1f, 0f).endVertex();
+                worldrenderer.pos(dVec[nVecPos[idx][1]][0] * dScale, dVec[nVecPos[idx][1]][1] * dScale, dVec[nVecPos[idx][1]][2] * dScale).tex(0d, 1d).normal(0f, 1f, 0f).endVertex();
+                worldrenderer.pos(dVec[nVecPos[idx][2]][0] * dScale, dVec[nVecPos[idx][2]][1] * dScale, dVec[nVecPos[idx][2]][2] * dScale).tex(1d, 1d).normal(0f, 1f, 0f).endVertex();
+                worldrenderer.pos(dVec[nVecPos[idx][3]][0] * dScale, dVec[nVecPos[idx][3]][1] * dScale, dVec[nVecPos[idx][3]][2] * dScale).tex(1d, 0d).normal(0f, 1f, 0f).endVertex();
+//                worldrenderer.addVertexWithUV(dVec[nVecPos[idx][0]][0] * dScale, dVec[nVecPos[idx][0]][1] * dScale, dVec[nVecPos[idx][0]][2] * dScale, 0, 0);
+//                worldrenderer.addVertexWithUV(dVec[nVecPos[idx][1]][0] * dScale, dVec[nVecPos[idx][1]][1] * dScale, dVec[nVecPos[idx][1]][2] * dScale, 0, 1);
+//                worldrenderer.addVertexWithUV(dVec[nVecPos[idx][2]][0] * dScale, dVec[nVecPos[idx][2]][1] * dScale, dVec[nVecPos[idx][2]][2] * dScale, 1, 1);
+//                worldrenderer.addVertexWithUV(dVec[nVecPos[idx][3]][0] * dScale, dVec[nVecPos[idx][3]][1] * dScale, dVec[nVecPos[idx][3]][2] * dScale, 1, 0);
             }
         }
 

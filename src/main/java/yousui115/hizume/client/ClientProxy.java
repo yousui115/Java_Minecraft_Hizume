@@ -121,7 +121,7 @@ public class ClientProxy extends CommonProxy
             Timer timer;
             try
             {
-                timer = ObfuscationReflectionHelper.getPrivateValue(Minecraft.class, Minecraft.getMinecraft(), 17);
+                timer = ObfuscationReflectionHelper.getPrivateValue(Minecraft.class, Minecraft.getMinecraft(), 19);
             }
             catch (UnableToAccessFieldException e)
             {

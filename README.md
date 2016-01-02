@@ -1,11 +1,11 @@
-# [MinecraftMod] 緋爪 [MC1.8]
+# [MinecraftMod] 緋爪 [MC1.8.9]
 
-▼DL (v1)<br>
-https://www.dropbox.com/s/khdfd7pyfnljk4t/Hizume_v1_M18_F1563.jar?dl=0<br>
+▼DL (v2)<br>
+https://github.com/yousui115/Java_Minecraft_Hizume/releases/download/tag_v2_release/Hizume_v2_M189_F1671.jar<br>
 <br>
 ▼動作確認環境やら<br>
-・MC1.8<br>
-・Forge1563<br>
+・MC1.8.9<br>
+・Forge1671<br>
 <br>
 ▼Modの説明やら<br>
 ・「落第騎士の英雄譚」に登場する「緋爪」を、マイクラの世界に持ってきた。<br>

@@ -323,14 +323,14 @@ public class ItemHizume extends ItemSword
                     }
 
                     //■Entityに接触しているSOWを開く
-                    List<Object> objs = playerIn.worldObj.weatherEffects;
-                    if (objs == null || objs.isEmpty()) { continue; }
+                    List<Entity> entities = playerIn.worldObj.weatherEffects;
+                    if (entities == null || entities.isEmpty()) { continue; }
 
-                    for (Object obj : objs)
+                    for (Entity entity : entities)
                     {
-                        if (obj instanceof EntitySOW)
+                        if (entity instanceof EntitySOW)
                         {
-                            EntitySOW sow = (EntitySOW)obj;
+                            EntitySOW sow = (EntitySOW)entity;
                             if (sow.getEntityBoundingBox().intersectsWith(target.getEntityBoundingBox()))
                             {
                                 //■重なってるので炸裂

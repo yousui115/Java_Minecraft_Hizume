@@ -19,7 +19,7 @@ public class Hizume
 {
     public static final String MOD_ID = "hizume";
     public static final String MOD_DOMAIN = "yousui115." + Hizume.MOD_ID;
-    public static final String VERSION = "v1";
+    public static final String VERSION = "v2";
 
     //■このクラスのインスタンス
     @Mod.Instance(Hizume.MOD_ID)
