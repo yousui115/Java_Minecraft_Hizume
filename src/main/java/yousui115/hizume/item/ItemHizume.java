@@ -1,12 +1,15 @@
 package yousui115.hizume.item;
 
 import java.util.List;
+import java.util.UUID;
 
 import net.minecraft.client.renderer.OpenGlHelper;
 import net.minecraft.client.resources.model.ModelResourceLocation;
 import net.minecraft.entity.DataWatcher;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLivingBase;
+import net.minecraft.entity.SharedMonsterAttributes;
+import net.minecraft.entity.ai.attributes.AttributeModifier;
 import net.minecraft.entity.boss.EntityDragon;
 import net.minecraft.entity.boss.EntityDragonPart;
 import net.minecraft.entity.player.EntityPlayer;
@@ -25,6 +28,7 @@ import yousui115.hizume.network.MessageSOW;
 import yousui115.hizume.network.MessageScars;
 import yousui115.hizume.network.PacketHandler;
 
+import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 
 public class ItemHizume extends ItemSword
@@ -47,21 +51,23 @@ public class ItemHizume extends ItemSword
      */
     public void onUpdate(ItemStack stack, World worldIn, Entity entityIn, int itemSlot, boolean isSelected)
     {
-        //■爪痕設置キーを押しただの押してないだの
-        boolean isPress = false;
-        //■押した回数を覚えてるので発散させる
-        while (Hizume.proxy.getKeySOW().isPressed()) { isPress = true; }
-        //■爪痕設置キーを押しながら緋爪を取ると爪痕が出来るけど、1個だし大丈夫大丈夫
-        isPress = isPress && Hizume.proxy.getKeySOW().isKeyDown();
-
-        //■カレントアイテムでないなら処理をかえす
-        if (!isSelected) { return; }
+        //■対象はプレイヤー
         if (!(entityIn instanceof EntityPlayer)) { return; }
         EntityPlayer player = (EntityPlayer)entityIn;
 
+        //■カレントアイテムでないなら処理をかえす
+        if (!isSelected) { return; }
 
         //■アイテム使ってるなら空間に傷はつけられない
         if (player.getItemInUseCount() != 0) { return; }
+
+        //■キー入力関連
+        // ▼爪痕設置キーを押しただの押してないだの
+        boolean isPress = false;
+        // ▼押した回数を覚えてるので発散させる
+        while (Hizume.proxy.getKeySOW().isPressed()) { isPress = true; }
+        // ▼押した形跡 + 現在押されている(継続)
+        isPress = isPress && Hizume.proxy.getKeySOW().isKeyDown();
 
         //■クライアント側での処理
         if (worldIn.isRemote && isPress)
@@ -110,11 +116,18 @@ public class ItemHizume extends ItemSword
     @Override
     public Multimap getAttributeModifiers(ItemStack stack)
     {
-//        HashMultimap multimap = HashMultimap.create();
-//        multimap.put(   SharedMonsterAttributes.attackDamage.getAttributeUnlocalizedName(),
-//                        new AttributeModifier(itemModifierUUID, "Weapon modifier", (double)this., 0));
-//        return multimap;
-        return super.getAttributeModifiers(stack);
+        HashMultimap multimap = HashMultimap.create();
+        multimap.put(   SharedMonsterAttributes.attackDamage.getAttributeUnlocalizedName(),
+                        new AttributeModifier(itemModifierUUID, "Weapon modifier", (double)this.attackDamage2, 0));
+//        multimap.put(   SharedMonsterAttributes.movementSpeed.getAttributeUnlocalizedName(),
+//                        new AttributeModifier(itemModifierUUID, "move speed", 0.1f, 0));
+        return multimap;
+//        return super.getAttributeModifiers(stack);
+    }
+
+    public UUID getUUID()
+    {
+        return this.itemModifierUUID;
     }
 
     /**
@@ -127,9 +140,11 @@ public class ItemHizume extends ItemSword
     @Override
     public void onUsingTick(ItemStack stackIn, EntityPlayer playerIn, int count)
     {
+        //■無駄に蓄積されてるかもしれない入力回数の発散
         boolean isPress = false;
         while(Hizume.proxy.getKeyScars().isPressed()) { isPress = true; }
 
+        //■最初の20tickは何も起きない
         if (count > this.getMaxItemUseDuration(stackIn) - 20) { return; }
 
         //■
